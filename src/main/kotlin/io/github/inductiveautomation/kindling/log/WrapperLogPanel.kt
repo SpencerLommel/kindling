@@ -135,7 +135,12 @@ class WrapperLogPanel(
                 val match = DEFAULT_WRAPPER_MESSAGE_FORMAT.matchEntire(line)
                 if (match != null) {
                     val timestamp by match.groups
-                    val time = DEFAULT_WRAPPER_LOG_TIME_FORMAT.parse(timestamp.value.trim(), Instant::from)
+                    val time = try {
+                        DEFAULT_WRAPPER_LOG_TIME_FORMAT.parse(timestamp.value.trim(), Instant::from)
+                    } catch (e: Exception) {
+                        println("Error parsing timestamp on line $index: $line")
+                        continue
+                    }
 
                     // we hit an actual logged event
                     if (match.groups["level"] != null) {
@@ -169,7 +174,8 @@ class WrapperLogPanel(
                         }
                     }
                 } else {
-                    throw IllegalArgumentException("Error parsing line $index, unparseable value: $line")
+                    println("Error parsing line $index: $line")
+                    continue
                 }
             }
             partialEvent.flush()
