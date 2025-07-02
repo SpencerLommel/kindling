@@ -33,7 +33,7 @@ data class WrapperLogEvent(
     override var marked: Boolean = false,
 ) : LogEvent {
     companion object {
-        const val STDOUT = "STDOUT"
+        const val STDOUT = "WRAPPER"
     }
 }
 
