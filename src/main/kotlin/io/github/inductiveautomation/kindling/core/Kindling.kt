@@ -20,6 +20,7 @@ import io.github.inductiveautomation.kindling.utils.ReifiedLabelProvider.Compani
 import io.github.inductiveautomation.kindling.utils.ReifiedListTableModel
 import io.github.inductiveautomation.kindling.utils.ThemeSerializer
 import io.github.inductiveautomation.kindling.utils.ToolSerializer
+import io.github.inductiveautomation.kindling.utils.ZoneIdSerializer
 import io.github.inductiveautomation.kindling.utils.configureCellRenderer
 import io.github.inductiveautomation.kindling.utils.debounce
 import io.github.inductiveautomation.kindling.utils.render
@@ -40,6 +41,7 @@ import java.awt.Image
 import java.net.URI
 import java.nio.charset.Charset
 import java.nio.file.Path
+import java.time.ZoneId
 import java.util.Vector
 import javax.swing.DefaultCellEditor
 import javax.swing.DefaultComboBoxModel
@@ -184,6 +186,29 @@ data object Kindling {
                 },
             )
 
+            val DefaultTimezone = preference(
+                name = "Timezone",
+                description = "Timezone to use when displaying timestamps",
+                legacyValueProvider = { allPrefs ->
+                    allPrefs["logview"]?.get("timezone")?.let {
+                        Json.decodeFromJsonElement(ZoneIdSerializer, it)
+                    }
+                },
+                default = ZoneId.systemDefault(),
+                serializer = ZoneIdSerializer,
+                editor = {
+                    val zoneIds = ZoneId.getAvailableZoneIds().filter { id ->
+                        id !in ZoneId.SHORT_IDS.keys
+                    }.sorted()
+                    JComboBox(Vector(zoneIds)).apply {
+                        selectedItem = currentValue.id
+                        addActionListener {
+                            currentValue = ZoneId.of(selectedItem as String)
+                        }
+                    }
+                },
+            )
+
             override val displayName: String = "General"
             override val serialKey: String = "general"
             override val preferences: List<Preference<*>> = listOf(
@@ -194,6 +219,7 @@ data object Kindling {
                 ShowLogTree,
                 UseHyperlinks,
                 HighlightByDefault,
+                DefaultTimezone,
             )
         }
 
@@ -297,7 +323,7 @@ data object Kindling {
             val categoryData = internalState.getOrPut(category.serialKey) { mutableMapOf() }
             return categoryData[preference.serialKey]?.let { currentValue ->
                 preferencesJson.decodeFromJsonElement(preference.serializer, currentValue)
-            }
+            } ?: preference.legacyValueProvider?.invoke(internalState)
         }
 
         operator fun <T : Any> set(

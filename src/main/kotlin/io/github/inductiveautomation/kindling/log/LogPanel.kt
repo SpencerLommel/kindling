@@ -8,6 +8,7 @@ import io.github.inductiveautomation.kindling.core.Kindling.Preferences.Advanced
 import io.github.inductiveautomation.kindling.core.Kindling.Preferences.General.ShowFullLoggerNames
 import io.github.inductiveautomation.kindling.core.Kindling.Preferences.General.UseHyperlinks
 import io.github.inductiveautomation.kindling.core.LinkHandlingStrategy
+import io.github.inductiveautomation.kindling.core.Timezone
 import io.github.inductiveautomation.kindling.core.ToolOpeningException
 import io.github.inductiveautomation.kindling.core.ToolPanel
 import io.github.inductiveautomation.kindling.utils.Action
@@ -167,7 +168,7 @@ sealed class LogPanel<T : LogEvent>(
     private val markHighlighter = ColorHighlighter(
         fgSupplier = { UIManager.getColor("Table.selectionForeground") },
         bgSupplier = { UIManager.getColor("Table.cellFocusColor") },
-        predicate = { renderer, adapter ->
+        predicate = { _, adapter ->
             header.highlightMarked.isSelected &&
                 !table.isRowSelected(adapter.row) &&
                 table.model[table.convertRowIndexToModel(adapter.row)].marked
@@ -313,7 +314,7 @@ sealed class LogPanel<T : LogEvent>(
             table.selectionModel.updateDetails()
         }
 
-        LogViewer.SelectedTimeZone.addChangeListener {
+        Timezone.Default.addChangeListener {
             table.model.fireTableDataChanged()
         }
     }
@@ -332,8 +333,8 @@ sealed class LogPanel<T : LogEvent>(
                 .map { event ->
                     DetailEvent(
                         title = when (event) {
-                            is SystemLogEvent -> "${LogViewer.format(event.timestamp)} ${event.thread}"
-                            else -> LogViewer.format(event.timestamp)
+                            is SystemLogEvent -> "${Timezone.Default.format(event.timestamp)} ${event.thread}"
+                            else -> Timezone.Default.format(event.timestamp)
                         },
                         message = event.message,
                         body = event.stacktrace.map { element ->
